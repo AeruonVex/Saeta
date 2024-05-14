@@ -1,0 +1,17 @@
+{
+  "name": "base_module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "Hideki",
+  "license": "ISC",
+  "dependencies": {
+    "baileys": "github:WhiskeySockets/Baileys",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
