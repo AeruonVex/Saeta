@@ -1,12 +1,18 @@
 import P from 'pino';
-import { makeWASocket, DisconnectReason, useMultiFileAuthState } from 'baileys';
+import { makeWASocket, DisconnectReason, useMultiFileAuthState, MessageType } from 'baileys';
+import fs from 'fs';
 
-// Número del dueño del bot (debe ser un número de teléfono completo en formato internacional)
-const ownerNumber = '1234567890'; // Reemplaza con tu número
+// Cargar la configuración desde config.json
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+
+// Obtener el número del dueño y el prefijo desde config.json
+const ownerNumber = config.ownerNumber + '@s.whatsapp.net'; // Asegúrate de agregar '@s.whatsapp.net'
+const prefix = config.prefix;
 
 // Inicializar el estado de autenticación
 const { state, saveCreds } = await useMultiFileAuthState('baileys_auth_sessions');
 
+// Función para iniciar el bot
 const bot = () => {
   let sock = makeWASocket({
     logger: P({ level: 'silent' }),
@@ -38,7 +44,28 @@ const bot = () => {
     const from = message.key.remoteJid;
 
     // Comprobar si el mensaje es un comando
-    if (content.startsWith('/')) {
-      const command = content.slice(1).toLowerCase();
+    if (content.startsWith(prefix)) {
+      const command = content.slice(prefix.length).toLowerCase();
 
-      // Responder al coma
+      // Responder al comando /menu
+      if (command === 'menu') {
+        const response = 'Hola este es el menú principal';
+        await sock.sendMessage(from, { text: response }, { quoted: message });
+      }
+
+      // Comandos exclusivos para el dueño del bot
+      if (message.key.fromMe || from === ownerNumber) {
+        if (command === 'owner') {
+          const response = 'Hola este es el menú para el owner del bot';
+          await sock.sendMessage(from, { text: response }, { quoted: message });
+        }
+        // Aquí puedes agregar más comandos exclusivos para el dueño
+      }
+    }
+  });
+
+  return sock;
+};
+
+// Ejecutar el bot
+bot();
