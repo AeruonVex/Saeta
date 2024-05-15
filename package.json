@@ -1,5 +1,5 @@
 {
-  "name": "base_module",
+  "name": "saeta_bot",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,7 @@
     "start": "node index.js"
   },
   "keywords": [],
-  "author": "Hideki",
+  "author": "Kocmoc",
   "license": "ISC",
   "dependencies": {
     "baileys": "github:WhiskeySockets/Baileys",
