@@ -9,7 +9,7 @@ import fs from 'fs';
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
 // Obtener el número del dueño y el prefijo desde config.json
-const ownerNumber = config.ownerNumber + '@s.whatsapp.net'; // Asegúrate de agregar '@s.whatsapp.net'
+const ownerNumber = config.ownerNumber + '19299996333@s.whatsapp.net'; // Asegúrate de agregar '@s.whatsapp.net'
 const prefix = config.prefix;
 
 // Inicializar el estado de autenticación
