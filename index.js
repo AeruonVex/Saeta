@@ -41,24 +41,4 @@ const bot = () => {
     if (content.startsWith('/')) {
       const command = content.slice(1).toLowerCase();
 
-      // Responder al comando /menu
-      if (command === 'menu') {
-        const response = 'Hola este es el menú principal';
-        await sock.sendMessage(from, { text: response }, { quoted: message });
-      }
-
-      // Comandos exclusivos para el dueño del bot
-      if (message.key.fromMe || from === ownerNumber) {
-        if (command === 'owner') {
-          const response = 'Hola este es el menú para el owner del bot';
-          await sock.sendMessage(from, { text: response }, { quoted: message });
-        }
-        // Aquí puedes agregar más comandos exclusivos para el dueño
-      }
-    }
-  });
-
-  return sock;
-};
-
-bot();
+      // Responder al coma
