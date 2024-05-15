@@ -52,14 +52,14 @@ const bot = () => {
 
       // Responder al comando /menu
       if (command === 'menu') {
-        const response = 'Hola este es el menú principal';
+        const response = 'Hola este es el menú principal \n No hay nada interesante aquí por ahora XD \n *Hecho por Salo*';
         await sock.sendMessage(from, { text: response }, { quoted: message });
       }
 
       // Comandos exclusivos para el dueño del bot
       if (message.key.fromMe || from === ownerNumber) {
         if (command === 'owner') {
-          const response = '> Hola este es el menú para el owner del bot \n No hay nada interesante aquí por ahora XD \n *Hecho por Salo*';
+          const response = '> Hola este es el menú para el owner del bot';
           await sock.sendMessage(from, { text: response }, { quoted: message });
         }
         // Aquí puedes agregar más comandos exclusivos para el dueño
