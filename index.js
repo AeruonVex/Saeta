@@ -1,5 +1,8 @@
 import P from 'pino';
-import { makeWASocket, DisconnectReason, useMultiFileAuthState, MessageType } from 'baileys';
+// Importar todo el módulo baileys como pkg
+import pkg from 'baileys';
+// Desestructurar las propiedades que necesitas del módulo
+const { makeWASocket, DisconnectReason, useMultiFileAuthState, MessageType } = pkg;
 import fs from 'fs';
 
 // Cargar la configuración desde config.json
