@@ -40,32 +40,42 @@ const bot = () => {
     }
   });
 
-  // Escuchar mensajes entrantes
-  sock.ev.on('messages.upsert', async (m) => {
-    const message = m.messages[0];
-    const content = message.message.conversation;
-    const from = message.key.remoteJid;
+// Función para enviar una imagen con un mensaje
+async function enviarImagenConMensaje(sock, jid, pathImagen, mensaje) {
+  const imagen = fs.readFileSync(pathImagen); // Leer el archivo de la imagen
 
-    // Comprobar si el mensaje es un comando
-    if (content.startsWith(prefix)) {
-      const command = content.slice(prefix.length).toLowerCase();
+  // Enviar la imagen con el mensaje
+  await sock.sendMessage(jid, { image: imagen, caption: mensaje });
+}
 
-      // Responder al comando /menu
-      if (command === 'menu') {
-        const response = '> Hola este es el menú principal \nNo hay nada interesante aquí por ahora XD \n\n\n *Hecho por Salo*';
+// Escuchar mensajes entrantes
+sock.ev.on('messages.upsert', async (m) => {
+  const message = m.messages[0];
+  const content = message.message.conversation;
+  const from = message.key.remoteJid;
+
+  // Comprobar si el mensaje es un comando
+  if (content.startsWith(prefix)) {
+    const command = content.slice(prefix.length).toLowerCase();
+
+    // Responder al comando /menu con una imagen y mensaje
+    if (command === 'menu') {
+      const pathImagen = './images/menu.jpg'; // Asegúrate de que el nombre del archivo sea correcto
+      const mensaje = '> Hola este es el menú principal \n\nNo hay nada interesante aquí por ahora XD \nEstamos en desarrollo :D \n\n\n *By Kocmoc*';
+      await enviarImagenConMensaje(sock, from, pathImagen, mensaje);
+    }
+
+    // Comandos exclusivos para el dueño del bot
+    if (message.key.fromMe || from === ownerNumber + '@s.whatsapp.net') {
+      if (command === 'owner') {
+        const response = 'Hola este es el menú para el owner del bot';
         await sock.sendMessage(from, { text: response }, { quoted: message });
       }
-
-      // Comandos exclusivos para el dueño del bot
-      if (message.key.fromMe || from === ownerNumber) {
-        if (command === 'owner') {
-          const response = '> Hola este es el menú para el owner del bot';
-          await sock.sendMessage(from, { text: response }, { quoted: message });
-        }
-        // Aquí puedes agregar más comandos exclusivos para el dueño
-      }
+      // Aquí puedes agregar más comandos exclusivos para el dueño
     }
-  });
+  }
+});
+
 
   return sock;
 };
