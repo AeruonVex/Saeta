@@ -52,7 +52,7 @@ const bot = () => {
 
       // Responder al comando /menu
       if (command === 'menu') {
-        const response = 'Hola este es el menú principal \n No hay nada interesante aquí por ahora XD \n *Hecho por Salo*';
+        const response = '> Hola este es el menú principal \nNo hay nada interesante aquí por ahora XD \n\n\n *Hecho por Salo*';
         await sock.sendMessage(from, { text: response }, { quoted: message });
       }
 
