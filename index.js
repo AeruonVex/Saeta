@@ -1,7 +1,10 @@
+// Zapallo XD 
+// Hey no me robes el código me costó mucho trabajo :(
+
 import P from 'pino';
 // Importar todo el módulo baileys como pkg
 import pkg from 'baileys';
-// Desestructurar las propiedades que necesitas del módulo
+// Desestructurar las propiedades necesarias del módulo
 const { makeWASocket, DisconnectReason, useMultiFileAuthState, MessageType } = pkg;
 import fs from 'fs';
 
@@ -9,7 +12,7 @@ import fs from 'fs';
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
 // Obtener el número del dueño y el prefijo desde config.json
-const ownerNumber = config.ownerNumber + '@s.whatsapp.net'; // Asegúrate de agregar '@s.whatsapp.net'
+const ownerNumber = config.ownerNumber + '@s.whatsapp.net';
 const prefix = config.prefix;
 
 // Inicializar el estado de autenticación
@@ -58,20 +61,20 @@ sock.ev.on('messages.upsert', async (m) => {
   if (content.startsWith(prefix)) {
     const command = content.slice(prefix.length).toLowerCase();
 
-    // Responder al comando /menu con una imagen y mensaje
+    // Menú 
     if (command === 'menu') {
-      const pathImagen = './images/menu.jpg'; // Asegúrate de que el nombre del archivo sea correcto
+      const pathImagen = './images/menu.jpg'; 
       const mensaje = '> Hola este es el menú principal \n\nNo hay nada interesante aquí por ahora XD \nEstamos en desarrollo :D \n\n\n *By Kocmoc*';
       await enviarImagenConMensaje(sock, from, pathImagen, mensaje);
     }
 
-    // Comandos exclusivos para el dueño del bot
+    // owner
     if (message.key.fromMe || from === ownerNumber + '@s.whatsapp.net') {
       if (command === 'owner') {
         const response = 'Hola este es el menú para el owner del bot';
         await sock.sendMessage(from, { text: response }, { quoted: message });
       }
-      // Aquí puedes agregar más comandos exclusivos para el dueño
+      // futuro
     }
   }
 });
