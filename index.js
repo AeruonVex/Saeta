@@ -12,15 +12,15 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 
 // Desestructurar las propiedades necesarias del módulo
-const { makeWASocket, DisconnectReason, useMultiFileAuthState, MessageType, downloadContentFromMessage } = pkg;
+const { makeWASocket, DisconnectReason, useMultiFileAuthState, MessageType, downloadContentFromMessage, proto } = pkg;
 
 const execAsync = promisify(exec);
 const pipelineAsync = promisify(pipeline);
 
-// Cargar la configuración
+// Cargar la configuración desde config.json
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
-// Obtener el número del dueño y el prefijo
+// Obtener el número del dueño y el prefijo desde config.json
 const ownerNumber = config.ownerNumber + '@s.whatsapp.net';
 const prefix = config.prefix;
 
@@ -92,6 +92,9 @@ const bot = () => {
     if (content.startsWith(prefix)) {
       const command = content.slice(prefix.length).toLowerCase();
 
+      // Reaccionar al mensaje para indicar que el comando ha sido detectado
+      await sock.sendMessage(from, { react: { text: '✔', key: message.key } });
+
       // Menú 
       if (command === 'menu') {
         const pathImagen = './images/menu.jpg'; 
@@ -127,3 +130,4 @@ const bot = () => {
 
 // Ejecutar el bot
 bot();
+
