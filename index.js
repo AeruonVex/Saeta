@@ -10,9 +10,14 @@ import { pipeline } from 'stream';
 import { createReadStream, createWriteStream } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { fileTypeFromBuffer } from 'file-type';
+import fetch from 'node-fetch';
+import { Sticker } from 'wa-sticker-formatter';
+import { Image } from 'node-webpmux';
+import { spawn } from 'child_process';
 
 // Desestructurar las propiedades necesarias del módulo
-const { makeWASocket, DisconnectReason, useMultiFileAuthState, MessageType, downloadContentFromMessage, proto } = pkg;
+const { makeWASocket, DisconnectReason, useMultiFileAuthState, downloadContentFromMessage } = pkg;
 
 const execAsync = promisify(exec);
 const pipelineAsync = promisify(pipeline);
@@ -29,103 +34,134 @@ const { state, saveCreds } = await useMultiFileAuthState('baileys_auth_sessions'
 
 // Función para enviar una imagen con un mensaje
 async function enviarImagenConMensaje(sock, jid, pathImagen, mensaje) {
-  const imagen = fs.readFileSync(pathImagen); // Leer el archivo de la imagen
-  await sock.sendMessage(jid, { image: imagen, caption: mensaje });
+    const imagen = fs.readFileSync(pathImagen); // Leer el archivo de la imagen
+    await sock.sendMessage(jid, { image: imagen, caption: mensaje });
 }
 
-// Función para convertir una imagen en sticker y enviarla
-async function enviarSticker(sock, jid, buffer) {
-  // Crear un archivo temporal para el sticker
-  const tempPath = join(tmpdir(), 'sticker.webp');
+// Función para crear stickers
+async function sticker5(img, url, packname, author, categories = [''], extra = {}) {
+    const stickerMetadata = {
+        type: 'default',
+        pack: packname,
+        author,
+        categories,
+        ...extra
+    };
+    return (new Sticker(img ? img : url, stickerMetadata)).toBuffer();
+}
 
-  // Escribir el buffer de la imagen en el archivo temporal
-  await fs.promises.writeFile(tempPath, buffer);
+async function addExif(webpSticker, packname, author, categories = [''], extra = {}) {
+    const img = new Image();
+    const stickerPackId = crypto.randomBytes(32).toString('hex');
+    const json = { 'sticker-pack-id': stickerPackId, 'sticker-pack-name': packname, 'sticker-pack-publisher': author, 'emojis': categories, ...extra };
+    let exifAttr = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
+    let jsonBuffer = Buffer.from(JSON.stringify(json), 'utf8');
+    let exif = Buffer.concat([exifAttr, jsonBuffer]);
+    exif.writeUIntLE(jsonBuffer.length, 14, 4);
+    await img.load(webpSticker);
+    img.exif = exif;
+    return await img.save(null);
+}
 
-  // Usar ffmpeg para convertir la imagen a formato webp
-  await execAsync(`ffmpeg -i ${tempPath} -vcodec libwebp -filter:v fps=fps=10 ${tempPath}`);
+async function sticker(img, url, ...args) {
+    let lastError, stiker;
+    for (let func of [sticker5].filter(f => f)) {
+        try {
+            stiker = await func(img, url, ...args);
+            if (stiker.includes('html')) continue;
+            if (stiker.includes('WEBP')) {
+                try {
+                    return await addExif(stiker, ...args);
+                } catch (e) {
+                    console.error(e);
+                    return stiker;
+                }
+            }
+            throw stiker.toString();
+        } catch (err) {
+            lastError = err;
+            continue;
+        }
+    }
+    console.error(lastError);
+    return lastError;
+}
 
-  // Leer el sticker desde el archivo temporal
-  const stickerStream = createReadStream(tempPath);
-
-  // Enviar el sticker
-  await pipelineAsync(
-    stickerStream,
-    sock.sendMessage(jid, { sticker: stickerStream })
-  );
-
-  // Eliminar el archivo temporal
-  await fs.promises.unlink(tempPath);
+// Función para convertir stream a buffer
+async function bufferToArray(buffer) {
+    let chunks = [];
+    for await (let chunk of buffer) {
+        chunks.push(chunk);
+    }
+    return chunks;
 }
 
 // Función para iniciar el bot
 const bot = () => {
-  let sock = makeWASocket({
-    logger: P({ level: 'silent' }),
-    printQRInTerminal: true,
-    auth: state
-  });
+    let sock = makeWASocket({
+        logger: P({ level: 'silent' }),
+        printQRInTerminal: true,
+        auth: state
+    });
 
-  // Guardar credenciales automáticamente
-  sock.ev.on('creds.update', saveCreds);
+    // Guardar credenciales automáticamente
+    sock.ev.on('creds.update', saveCreds);
 
-  // Manejar la conexión
-  sock.ev.on('connection.update', ({ qr, connection, lastDisconnect }) => {
-    if (qr) {
-      console.log('Escanee el siguiente QR con su WhatsApp actualizado.');
-    }
-    if (connection === 'close') {
-      if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
-        bot(); // Reintentar conexión
-      }
-    } else if (connection === 'open') {
-      console.log('Bot conectado');
-    }
-  });
-
-  // Escuchar mensajes entrantes
-  sock.ev.on('messages.upsert', async (m) => {
-    const message = m.messages[0];
-    const content = message.message.conversation;
-    const from = message.key.remoteJid;
-
-    // Comprobar si el mensaje es un comando
-    if (content.startsWith(prefix)) {
-      const command = content.slice(prefix.length).toLowerCase();
-
-      // Reaccionar al mensaje para indicar que el comando ha sido detectado
-      await sock.sendMessage(from, { react: { text: '✔', key: message.key } });
-
-      // Menú 
-      if (command === 'menu') {
-        const pathImagen = './images/menu.jpg'; 
-        const mensaje = '> Hola este es el menú principal \n\nNo hay nada interesante aquí por ahora XD \nEstamos en desarrollo :D \n\n\n *By Kocmoc*';
-        await enviarImagenConMensaje(sock, from, pathImagen, mensaje);
-      }
-
-      // Comando para crear stickers
-      if (command === 's' && message.message.imageMessage) {
-        const mediaMessage = message.message.imageMessage;
-        const stream = await downloadContentFromMessage(mediaMessage, 'image');
-        const buffer = [];
-        for await (const chunk of stream) {
-          buffer.push(chunk);
+    // Manejar la conexión
+    sock.ev.on('connection.update', ({ qr, connection, lastDisconnect }) => {
+        if (qr) {
+            console.log('Escanee el siguiente QR con su WhatsApp actualizado.');
         }
-        const imageBuffer = Buffer.concat(buffer);
-        await enviarSticker(sock, from, imageBuffer);
-      }
-
-      // owner
-      if (message.key.fromMe || from === ownerNumber) {
-        if (command === 'owner') {
-          const response = 'Hola este es el menú para el owner del bot';
-          await sock.sendMessage(from, { text: response }, { quoted: message });
+        if (connection === 'close') {
+            if (lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut) {
+                bot(); // Reintentar conexión
+            }
+        } else if (connection === 'open') {
+            console.log('Bot conectado');
         }
-        // futuro
-      }
-    }
-  });
+    });
 
-  return sock;
+    // Escuchar mensajes entrantes
+    sock.ev.on('messages.upsert', async (m) => {
+        const message = m.messages[0];
+        const content = message.message.conversation;
+        const from = message.key.remoteJid;
+
+        // Comprobar si el mensaje es un comando
+        if (content.startsWith(prefix)) {
+            const command = content.slice(prefix.length).toLowerCase();
+
+            // Reaccionar al mensaje para indicar que el comando ha sido detectado
+            await sock.sendMessage(from, { react: { text: '✔', key: message.key } });
+
+            // Menú 
+            if (command === 'menu') {
+                const pathImagen = './images/menu.jpg';
+                const mensaje = '> Hola este es el menú principal \n\nNo hay nada interesante aquí por ahora XD \nEstamos en desarrollo :D \n\n\n *By Kocmoc*';
+                await enviarImagenConMensaje(sock, from, pathImagen, mensaje);
+            }
+
+            // Comando para hacer stickers
+            if (command === 's' && message.message.imageMessage) {
+                const buffer = await downloadContentFromMessage(message.message.imageMessage, 'image');
+                const imgBuffer = Buffer.concat(await bufferToArray(buffer));
+
+                const stickerBuffer = await sticker(imgBuffer, null, 'BotPack', 'Kocmoc');
+                await sock.sendMessage(from, { sticker: stickerBuffer });
+            }
+
+            // owner
+            if (message.key.fromMe || from === ownerNumber) {
+                if (command === 'owner') {
+                    const response = 'Hola este es el menú para el owner del bot';
+                    await sock.sendMessage(from, { text: response }, { quoted: message });
+                }
+                // futuro
+            }
+        }
+    });
+
+    return sock;
 };
 
 // Ejecutar el bot
