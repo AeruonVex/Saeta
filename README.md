@@ -13,14 +13,14 @@
     > saeta_bot@1.0.0 start
     > node index.js
 
-    file:///home/kocmoc/Saeta/index.js:16
-    import { Image } from 'node-webpmux';
-         ^^^^^
-    SyntaxError: Named export 'Image' not found. The requested module 'node-webpmux' is a CommonJS module, which may not support all module.exports as named exports.
+    file:///home/kocmoc/Saeta/index.js:12
+    import { fileTypeFromBuffer } from 'file-type';
+         ^^^^^^^^^^^^^^^^^^
+    SyntaxError: Named export 'fileTypeFromBuffer' not found. The requested module 'file-type' is a CommonJS module, which may not support all module.exports as named exports.
     CommonJS modules can always be imported via the default export, for example using:
 
-    import pkg from 'node-webpmux';
-    const { Image } = pkg;
+    import pkg from 'file-type';
+    const { fileTypeFromBuffer } = pkg;
 
     at ModuleJob._instantiate (node:internal/modules/esm/module_job:123:21)
     at async ModuleJob.run (node:internal/modules/esm/module_job:191:5)
