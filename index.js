@@ -1,7 +1,4 @@
-// Zapallo XD 
-// Hey no me robes el código me costó mucho trabajo :(
-
-import P from 'pino';
+ import P from 'pino';
 import pkg from 'baileys';
 import fs from 'fs';
 import { exec } from 'child_process';
@@ -23,8 +20,12 @@ const { fileTypeFromBuffer } = fileTypePkg;
 const execAsync = promisify(exec);
 const pipelineAsync = promisify(pipeline);
 
+// Log para verificar que se ejecuta el script
+console.log("Script iniciado");
+
 // Cargar la configuración desde config.json
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+console.log("Configuración cargada", config);
 
 // Obtener el número del dueño y el prefijo desde config.json
 const ownerNumber = config.ownerNumber + '@s.whatsapp.net';
@@ -32,6 +33,7 @@ const prefix = config.prefix;
 
 // Inicializar el estado de autenticación
 const { state, saveCreds } = await useMultiFileAuthState('baileys_auth_sessions');
+console.log("Estado de autenticación inicializado");
 
 // Función para enviar una imagen con un mensaje
 async function enviarImagenConMensaje(sock, jid, pathImagen, mensaje) {
@@ -100,6 +102,7 @@ async function bufferToArray(buffer) {
 
 // Función para iniciar el bot
 const bot = () => {
+    console.log("Iniciando el bot...");
     let sock = makeWASocket({
         logger: P({ level: 'silent' }),
         printQRInTerminal: true,
@@ -108,6 +111,7 @@ const bot = () => {
 
     // Guardar credenciales automáticamente
     sock.ev.on('creds.update', saveCreds);
+    console.log("Credenciales guardadas");
 
     // Manejar la conexión
     sock.ev.on('connection.update', ({ qr, connection, lastDisconnect }) => {
@@ -128,6 +132,8 @@ const bot = () => {
         const message = m.messages[0];
         const content = message.message.conversation;
         const from = message.key.remoteJid;
+
+        console.log("Mensaje recibido", content);
 
         // Comprobar si el mensaje es un comando
         if (content.startsWith(prefix)) {
@@ -168,3 +174,4 @@ const bot = () => {
 
 // Ejecutar el bot
 bot();
+console.log("Bot ejecutado");
