@@ -10,7 +10,7 @@
 
 <h1>Error de consola [desarrollador]</h1>
 
-     > saeta_bot@1.0.0 start
+    > saeta_bot@1.0.0 start
     > node index.js
 
     file:///home/kocmoc/Saeta/index.js:16
