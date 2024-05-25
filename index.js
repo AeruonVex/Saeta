@@ -9,15 +9,16 @@ import { promisify } from 'util';
 import { pipeline } from 'stream';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { fileTypeFromBuffer } from 'file-type';
 import fetch from 'node-fetch';
 import { Sticker } from 'wa-sticker-formatter';
 import crypto from 'crypto';
 import { spawn } from 'child_process';
 import webp from 'node-webpmux';
+import fileTypePkg from 'file-type';
 
 // Desestructurar las propiedades necesarias del módulo
 const { makeWASocket, DisconnectReason, useMultiFileAuthState, downloadContentFromMessage } = pkg;
+const { fileTypeFromBuffer } = fileTypePkg;
 
 const execAsync = promisify(exec);
 const pipelineAsync = promisify(pipeline);
@@ -51,7 +52,8 @@ async function sticker5(img, url, packname, author, categories = [''], extra = {
 }
 
 async function addExif(webpSticker, packname, author, categories = [''], extra = {}) {
-    const img = new webp.Image();
+    const { Image } = webp;
+    const img = new Image();
     const stickerPackId = crypto.randomBytes(32).toString('hex');
     const json = { 'sticker-pack-id': stickerPackId, 'sticker-pack-name': packname, 'sticker-pack-publisher': author, 'emojis': categories, ...extra };
     let exifAttr = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
