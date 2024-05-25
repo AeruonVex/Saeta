@@ -130,32 +130,23 @@ const bot = () => {
     // Escuchar mensajes entrantes
     sock.ev.on('messages.upsert', async (m) => {
         const message = m.messages[0];
-        const content = message.message.conversation;
         const from = message.key.remoteJid;
 
-        console.log("Mensaje recibido", content);
+        console.log("Mensaje recibido", message);
 
         // Comprobar si el mensaje es un comando
-        if (content.startsWith(prefix)) {
+        if (message.message?.conversation?.startsWith(prefix)) {
+            const content = message.message.conversation;
             const command = content.slice(prefix.length).toLowerCase();
 
             // Reaccionar al mensaje para indicar que el comando ha sido detectado
-            await sock.sendMessage(from, { react: { text: '✔', key: message.key } });
+            await sock.sendMessage(from, { react: { text: '💫', key: message.key } });
 
             // Menú 
             if (command === 'menu') {
                 const pathImagen = './images/menu.jpg';
                 const mensaje = '> Hola este es el menú principal \n\nNo hay nada interesante aquí por ahora XD \nEstamos en desarrollo :D \n\n\n *By Kocmoc*';
                 await enviarImagenConMensaje(sock, from, pathImagen, mensaje);
-            }
-
-            // Comando para hacer stickers
-            if (command === 's' && message.message.imageMessage) {
-                const buffer = await downloadContentFromMessage(message.message.imageMessage, 'image');
-                const imgBuffer = Buffer.concat(await bufferToArray(buffer));
-
-                const stickerBuffer = await sticker(imgBuffer, null, 'BotPack', 'Kocmoc');
-                await sock.sendMessage(from, { sticker: stickerBuffer });
             }
 
             // owner
@@ -166,6 +157,15 @@ const bot = () => {
                 }
                 // futuro
             }
+        }
+
+        // Comprobar si el mensaje es una imagen con el comando /s
+        if (message.message?.imageMessage && message.message?.conversation?.startsWith(prefix + 's')) {
+            const buffer = await downloadContentFromMessage(message.message.imageMessage, 'image');
+            const imgBuffer = Buffer.concat(await bufferToArray(buffer));
+
+            const stickerBuffer = await sticker(imgBuffer, null, 'BotPack', 'Kocmoc');
+            await sock.sendMessage(from, { sticker: stickerBuffer });
         }
     });
 
