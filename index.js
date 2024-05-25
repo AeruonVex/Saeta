@@ -7,14 +7,14 @@ import fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { pipeline } from 'stream';
-import { createReadStream, createWriteStream } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { fileTypeFromBuffer } from 'file-type';
 import fetch from 'node-fetch';
 import { Sticker } from 'wa-sticker-formatter';
-import { Image } from 'node-webpmux';
+import crypto from 'crypto';
 import { spawn } from 'child_process';
+import webp from 'node-webpmux';
 
 // Desestructurar las propiedades necesarias del módulo
 const { makeWASocket, DisconnectReason, useMultiFileAuthState, downloadContentFromMessage } = pkg;
@@ -51,7 +51,7 @@ async function sticker5(img, url, packname, author, categories = [''], extra = {
 }
 
 async function addExif(webpSticker, packname, author, categories = [''], extra = {}) {
-    const img = new Image();
+    const img = new webp.Image();
     const stickerPackId = crypto.randomBytes(32).toString('hex');
     const json = { 'sticker-pack-id': stickerPackId, 'sticker-pack-name': packname, 'sticker-pack-publisher': author, 'emojis': categories, ...extra };
     let exifAttr = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
@@ -166,4 +166,3 @@ const bot = () => {
 
 // Ejecutar el bot
 bot();
-
